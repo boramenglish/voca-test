@@ -20,15 +20,43 @@ SHEET_URLS = {
 # 페이지 기본 설정
 st.set_page_config(page_title="🌳 남보람T의 출구시험", page_icon="🌳", layout="centered")
 
+# --- [핵심] 긴 단어 깨짐 방지 디자인 설정 (CSS) ---
+st.markdown("""
+<style>
+/* 1. 메인 문제(영어 단어) 글자 크기 유연하게 조절 */
+.big-word {
+    font-size: clamp(2.5rem, 8vw, 5rem) !important; /* 스마트폰에서는 작게, PC에서는 크게 자동 조절 */
+    word-break: keep-all; /* 단어 중간에 줄바꿈 방지 */
+    text-align: center;
+    padding: 20px;
+    border: 2px solid #CBD5E1;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+/* 2. 보기 버튼 글자 안 깨지게 조절 */
+div.stButton > button {
+    height: auto !important; /* 글자가 길면 버튼 세로 길이를 알아서 늘림 */
+    min-height: 60px; /* 기본 버튼 두께 확보 */
+    padding: 10px !important; 
+}
+div.stButton > button p {
+    word-break: keep-all !important; /* '당연하 / 게' 처럼 이상하게 잘리는 것 방지 */
+    white-space: normal !important; /* 글자가 길면 자연스럽게 다음 줄로 넘김 */
+    font-size: 1rem !important; /* 보기 글자 크기 최적화 */
+    line-height: 1.4 !important; /* 줄간격을 넓혀서 읽기 편하게 */
+}
+</style>
+""", unsafe_allow_html=True)
+
 # --- 데이터 불러오기 ---
 @st.cache_data(ttl=60)
 def load_words(url):
     try:
-        # 빈 값(NaN) 처리 및 문자열 변환
         df = pd.read_csv(url)
-        df = df.dropna(how='all') # 완전히 빈 줄 제거
+        df = df.dropna(how='all') 
         if len(df) < 8:
-            return {} # 8개 미만이면 빈 딕셔너리 반환
+            return {} 
         return dict(zip(df.iloc[:, 0].astype(str).str.strip(), df.iloc[:, 1].astype(str).str.strip()))
     except Exception as e:
         return {}
@@ -119,8 +147,9 @@ elif st.session_state.page == 'test':
     st.markdown(f"<h3 style='color: #007AFF; text-align: right;'>QUESTION {current_q_display} / {total_q}</h3>", unsafe_allow_html=True)
     
     word = st.session_state.test_words[st.session_state.current_q]
-    st.markdown(f"<h1 style='text-align: center; font-size: 5em; padding: 20px; border: 2px solid #CBD5E1; border-radius: 15px;'>{word}</h1>", unsafe_allow_html=True)
-    st.write("")
+    
+    # CSS 클래스를 적용하여 긴 단어도 폰트 사이즈가 유연하게 줄어들도록 변경!
+    st.markdown(f"<div class='big-word'>{word}</div>", unsafe_allow_html=True)
 
     if st.session_state.show_feedback:
         if st.session_state.is_correct:
