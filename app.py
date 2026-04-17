@@ -35,6 +35,7 @@ def load_words(url):
         return dict(zip(df.iloc[:, 0].astype(str).str.strip(), df.iloc[:, 1].astype(str).str.strip()))
     except: return {}
 
+# 세션 상태 초기화
 if 'authenticated' not in st.session_state: st.session_state.authenticated = False
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
@@ -47,6 +48,7 @@ def start_session(word_list, is_review=False):
     st.session_state.test_words = word_list
     st.session_state.current_q = 0
     st.session_state.review_mode = is_review
+    st.session_state.feedback = False # 피드백 상태 초기화
     if not is_review:
         st.session_state.score = 0
         st.session_state.incorrect_list = []
@@ -91,8 +93,9 @@ elif st.session_state.page == 'test':
         st.markdown("<div style='text-align:center; color:#e11d48; font-weight:bold;'>🔥 오답 정복 모드 진행 중 🔥</div>", unsafe_allow_html=True)
     
     st.write(f"📊 {st.session_state.current_q+1} / {len(st.session_state.test_words)}")
-    st.markdown(f"<div class='big-word'>{word}</div>", unsafe_allow_html=True)
+    st.markdown(f<div class='big-word'>{word}</div>, unsafe_allow_html=True)
 
+    # 정답/오답 피드백 화면
     if st.session_state.get('feedback', False):
         if st.session_state.is_correct: st.success("🎯 정답입니다!")
         else: st.error(f"⚠️ 오답! 정답은: **{st.session_state.ans}**")
@@ -103,6 +106,7 @@ elif st.session_state.page == 'test':
             if st.session_state.current_q >= len(st.session_state.test_words):
                 st.session_state.page = 'result'
             st.rerun()
+    # 문제 풀이 화면
     else:
         ans = words[word]
         others = [v for k, v in words.items() if v != ans]
@@ -123,10 +127,18 @@ elif st.session_state.page == 'test':
                         st.session_state.incorrect_list.append(word)
                 st.rerun()
 
-    # --- [NEW] 실시간 오답 서랍 ---
+    # --- 실시간 오답 서랍 (중간 재시험 기능 포함) ---
     if st.session_state.incorrect_list:
         st.write("---")
-        with st.expander("📝 현재까지 틀린 단어 확인하기"):
+        with st.expander(f"📝 현재까지 틀린 단어 ({len(st.session_state.incorrect_list)}개) 확인하기"):
+            # 중간 재시험 버튼
+            if st.button("🔥 지금 바로 틀린 단어만 재시험 보기", use_container_width=True, type="primary"):
+                review_words = list(st.session_state.incorrect_list)
+                st.session_state.incorrect_list = [] # 리스트 비우고 다시 시작
+                start_session(review_words, is_review=True)
+                st.rerun()
+            
+            st.write("")
             error_data = []
             for w in st.session_state.incorrect_list:
                 error_data.append({"단어": w, "뜻": words.get(w, "")})
