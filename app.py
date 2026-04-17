@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import random
 
-# [설정] 현장 암호 및 시트 링크 (기존 유지)
+# [설정] 기존 로직 유지
 SECRET_PASSWORD = "0000"
 SHEET_URLS = {
     "1학년": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRKKWnPkBvYx6PWMzyyrQSl3GX-eyS96nIJgWx2_S1I-YYBEs4z2ufB3HRghy4L3hzJqnwmWj4BHOa/pub?gid=0&single=true&output=csv",
@@ -10,91 +10,90 @@ SHEET_URLS = {
     "3학년": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRKKWnPkBvYx6PWMzyyrQSl3GX-eyS96nIJgWx2_S1I-YYBEs4z2ufB3HRghy4L3hzJqnwmWj4BHOa/pub?gid=893402083&single=true&output=csv"
 }
 
-st.set_page_config(page_title="Palette of Words", page_icon="🎨", layout="centered")
+st.set_page_config(page_title="BORAM VOCA ARCHIVE", page_icon="📝", layout="centered")
 
-# --- 🌸 예술적인 화사함: CSS 디자인 ---
+# --- 🖼️ 현대미술관(MoMA) 스타일 CSS ---
 st.markdown("""
 <style>
-    /* 배경: 화사한 수채화 느낌의 이미지와 그라데이션 조합 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;400;700&family=Inter:wght@300;400;600&display=swap');
+
+    /* 전체 배경: 완벽한 화이트 & 깔끔한 폰트 */
     .stApp {
-        background-image: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), 
-                          url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2071&auto=format&fit=crop');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        background-color: #ffffff;
+        font-family: 'Inter', sans-serif;
     }
 
-    /* 메인 타이틀: 감성적인 세리프체 느낌 */
-    .main-title {
-        font-family: 'Georgia', serif;
-        color: #ff7eb9;
+    /* 타이틀: 고급스러운 세리프체 */
+    .studio-title {
+        font-family: 'Noto Serif KR', serif;
+        color: #1a1a1a;
         text-align: center;
-        font-size: 3rem;
-        font-weight: bold;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
-    }
-
-    /* 단어 카드: 종이 질감의 캔버스 */
-    .big-word {
-        font-size: clamp(2.5rem, 10vw, 5rem) !important;
-        text-align: center;
-        padding: 60px 20px;
-        background: rgba(255, 255, 255, 0.85);
-        border-radius: 50px 10px 50px 10px; /* 비정형적인 예술적 느낌 */
-        border-left: 10px solid #ffbc00;
-        box-shadow: 15px 15px 0px rgba(255, 126, 185, 0.2);
-        color: #444;
-        font-weight: 800;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: -0.05em;
         margin-bottom: 40px;
+        border-bottom: 2px solid #1a1a1a;
+        display: inline-block;
+        padding-bottom: 10px;
     }
 
-    /* 버튼: 팔레트의 물감 컬러 */
+    /* 단어 카드: 여백과 선의 조화 */
+    .word-canvas {
+        font-family: 'Noto Serif KR', serif;
+        font-size: clamp(2.5rem, 8vw, 4rem);
+        text-align: center;
+        padding: 80px 20px;
+        background: #f9f9f9;
+        border: 1px solid #eeeeee;
+        color: #1a1a1a;
+        margin-bottom: 50px;
+        font-weight: 400;
+    }
+
+    /* 버튼: 미니멀한 블랙 & 화이트 디자인 */
     div.stButton > button {
-        border-radius: 25px;
-        border: none;
-        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-        color: white;
-        font-size: 1.2rem !important;
-        font-weight: 600;
-        min-height: 70px;
-        box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+        border-radius: 0px; /* 각진 디자인이 더 세련됨 */
+        border: 1px solid #1a1a1a;
+        background-color: #ffffff;
+        color: #1a1a1a;
+        font-size: 1rem !important;
+        min-height: 55px;
         transition: all 0.3s ease;
     }
 
     div.stButton > button:hover {
-        transform: scale(1.05) rotate(1deg);
-        background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-        box-shadow: 0 8px 20px rgba(161, 196, 253, 0.5);
-        color: white !important;
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
     }
 
-    /* 입력창 및 셀렉트박스 스타일 */
-    .stSelectbox, .stTextInput {
-        background-color: rgba(255, 255, 255, 0.8);
-        border-radius: 15px;
+    /* 진행 바: 아주 얇고 심플하게 */
+    .stProgress > div > div > div > div {
+        background-color: #1a1a1a;
+    }
+
+    /* 기타 텍스트 */
+    .sub-text {
+        text-align: center;
+        color: #888888;
+        font-size: 0.9rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 데이터 로드 함수 (기존 유지)
 @st.cache_data(ttl=60)
 def load_words(url):
     try:
         df = pd.read_csv(url)
         df = df.dropna(how='all')
-        if len(df) < 1: return {}
         return dict(zip(df.iloc[:, 0].astype(str).str.strip(), df.iloc[:, 1].astype(str).str.strip()))
     except: return {}
 
-# 세션 관리 (기존 유지)
-if 'authenticated' not in st.session_state: st.session_state.authenticated = False
-if 'page' not in st.session_state:
-    st.session_state.page = 'main'
-    st.session_state.score = 0
-    st.session_state.current_q = 0
-    st.session_state.incorrect_list = []
-    st.session_state.review_mode = False
+# 세션 상태 초기화
+for key in ['authenticated', 'page', 'score', 'current_q', 'incorrect_list', 'review_mode']:
+    if key not in st.session_state:
+        st.session_state[key] = False if 'mode' in key or 'auth' in key else (0 if 'score' in key or 'q' in key else ('main' if key == 'page' else []))
 
 def start_session(word_list, is_review=False):
     st.session_state.test_words = word_list
@@ -106,54 +105,54 @@ def start_session(word_list, is_review=False):
         st.session_state.incorrect_list = []
     st.session_state.page = 'test'
 
-# --- 1. 보안 게이트 (화사한 입장) ---
+# --- 1. Security (Minimal) ---
 if not st.session_state.authenticated:
-    st.markdown("<h1 class='main-title'>Welcome to<br>Boram's Atelier</h1>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown("<div style='text-align:center; margin-top:150px;'>", unsafe_allow_html=True)
+    st.markdown("<div class='studio-title'>ARCHIVE ACCESS</div>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        pwd = st.text_input("🔑 입장 암호를 입력하세요", type="password")
-        if st.button("🚪 아뜰리에 입장"):
+        pwd = st.text_input("PASSWORD", type="password", help="현장 암호를 입력하세요.")
+        if st.button("CONFIRM") or (pwd == SECRET_PASSWORD):
             if pwd == SECRET_PASSWORD:
                 st.session_state.authenticated = True
                 st.rerun()
-            else: st.error("🌸 암호가 올바르지 않아요!")
     st.stop()
 
-# --- 2. 메인 메뉴 ---
+# --- 2. Main Menu ---
 if st.session_state.page == 'main':
-    st.markdown("<h1 class='main-title'>Palette of Words</h1>", unsafe_allow_html=True)
-    st.write("<p style='text-align:center; color:#666;'>단어에 색을 입히는 시간입니다.</p>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center; margin-top:50px;'>", unsafe_allow_html=True)
+    st.markdown("<p class='sub-text'>Vocabulary Training System</p>", unsafe_allow_html=True)
+    st.markdown("<div class='studio-title'>BORAM ENGLISH</div>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        grade = st.selectbox("🎨 오늘의 캔버스 (학년)", ["1학년", "2학년", "3학년"])
+        grade = st.selectbox("SELECT GRADE", ["1학년", "2학년", "3학년"])
         st.session_state.selected_grade = grade
         words = load_words(SHEET_URLS[grade])
         
-        st.success(f"준비된 영감(단어): {len(words)}개")
+        st.markdown(f"<p style='text-align:center; color:#1a1a1a; margin-top:20px;'>{len(words)} Words Registered</p>", unsafe_allow_html=True)
         
-        if st.button("🖌️ 스케치 시작 (훈련)", use_container_width=True):
+        if st.button("START TRAINING", use_container_width=True):
             if len(words) >= 4:
                 word_keys = random.sample(list(words.keys()), len(words))
                 start_session(word_keys)
                 st.rerun()
-            else: st.error("어휘를 조금 더 채워주세요!")
 
-# --- 3. 테스트 화면 ---
+# --- 3. Test Screen ---
 elif st.session_state.page == 'test':
     words = load_words(SHEET_URLS[st.session_state.selected_grade])
     word = st.session_state.test_words[st.session_state.current_q]
     
-    st.write(f"🎨 **Progress:** {st.session_state.current_q+1} / {len(st.session_state.test_words)}")
-    st.markdown(f"<div class='big-word'>{word}</div>", unsafe_allow_html=True)
+    st.markdown(f"<p class='sub-text'>Sequence: {st.session_state.current_q+1} / {len(st.session_state.test_words)}</p>", unsafe_allow_html=True)
+    st.markdown(f"<div class='word-canvas'>{word}</div>", unsafe_allow_html=True)
 
     if st.session_state.get('feedback', False):
         if st.session_state.is_correct: 
-            st.markdown("<h3 style='text-align:center; color:#4CAF50;'>✨ 환상적인 터치예요!</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center; color:#1a1a1a; font-weight:600;'>CORRECT</p>", unsafe_allow_html=True)
         else: 
-            st.markdown(f"<h3 style='text-align:center; color:#e91e63;'>🎨 정답이라는 색은 <b>{st.session_state.ans}</b></h3>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align:center; color:#e63946;'>ERROR: {st.session_state.ans}</p>", unsafe_allow_html=True)
         
-        if st.button("다음 캔버스로 ➡️", use_container_width=True):
+        if st.button("CONTINUE", use_container_width=True):
             st.session_state.feedback = False
             st.session_state.current_q += 1
             if st.session_state.current_q >= len(st.session_state.test_words):
@@ -179,33 +178,29 @@ elif st.session_state.page == 'test':
                         st.session_state.incorrect_list.append(word)
                 st.rerun()
 
-# --- 4. 결과 화면 ---
+# --- 4. Result Screen ---
 elif st.session_state.page == 'result':
-    st.balloons()
-    st.markdown("<h1 class='main-title'>Masterpiece!</h1>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center; margin-top:50px;'>", unsafe_allow_html=True)
+    st.markdown("<div class='studio-title'>COMPLETED</div>", unsafe_allow_html=True)
     
     score_pct = int((st.session_state.score / len(st.session_state.test_words)) * 100) if not st.session_state.review_mode else 100
     
-    st.markdown(f"""
-        <div style='text-align:center; padding: 30px; background: rgba(255,255,255,0.7); border-radius: 20px; margin-bottom: 20px;'>
-            <h2 style='color:#ff7eb9;'>완성도: {score_pct}%</h2>
-            <p>오늘의 어휘 작품이 훌륭하게 완성되었습니다.</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size:3rem; font-weight:200;'>{score_pct}%</p>", unsafe_allow_html=True)
+    st.write("---")
 
     if st.session_state.incorrect_list:
-        with st.expander("📝 덧칠이 필요한 단어들 (오답)"):
-            words_dict = load_words(SHEET_URLS[st.session_state.selected_grade])
-            error_data = [{"단어": w, "뜻": words_dict.get(w, "")} for w in st.session_state.incorrect_list]
-            st.table(error_data)
+        st.markdown("<p class='sub-text'>Incorrect Data</p>", unsafe_allow_html=True)
+        words_dict = load_words(SHEET_URLS[st.session_state.selected_grade])
+        error_data = [{"Word": w, "Meaning": words_dict.get(w, "")} for w in st.session_state.incorrect_list]
+        st.table(error_data)
         
-        if st.button("🔥 오답 리터칭 시작", use_container_width=True):
+        if st.button("REVIEW INCORRECT WORDS", use_container_width=True):
             review_words = list(st.session_state.incorrect_list)
             st.session_state.incorrect_list = []
             start_session(review_words, is_review=True)
             st.rerun()
 
-    if st.button("🔄 아뜰리에 메인으로", use_container_width=True):
+    if st.button("BACK TO ARCHIVE", use_container_width=True):
         st.session_state.page = 'main'
         st.session_state.review_mode = False
         st.rerun()
