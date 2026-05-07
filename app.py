@@ -69,8 +69,10 @@ def load_words(url):
     try:
         df = pd.read_csv(url)
         df = df.dropna(how='all')
+        # 첫 번째 열을 단어(key), 두 번째 열을 뜻(value)으로 저장
         return dict(zip(df.iloc[:, 0].astype(str).str.strip(), df.iloc[:, 1].astype(str).str.strip()))
-    except: return {}
+    except:
+        return {}
 
 # 세션 초기화
 if 'authenticated' not in st.session_state: st.session_state.authenticated = False
@@ -86,12 +88,15 @@ def start_session(word_list, is_review=False):
     st.session_state.current_q = 0
     st.session_state.review_mode = is_review
     st.session_state.feedback = False
+    # 문제 보기를 초기화하기 위해 세션 삭제
+    if 'current_opts' in st.session_state:
+        del st.session_state.current_opts
     if not is_review:
         st.session_state.score = 0
         st.session_state.incorrect_list = []
     st.session_state.page = 'test'
 
-# --- 1. 보안 게이트 (문구 수정됨) ---
+# --- 1. 보안 게이트 ---
 if not st.session_state.authenticated:
     st.markdown("<div style='margin-top:100px;'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; font-family:\"Noto Serif KR\";'>🔒 보람T 어휘 훈련소 입장</h2>", unsafe_allow_html=True)
@@ -123,12 +128,26 @@ if st.session_state.page == 'main':
                 word_keys = random.sample(list(words.keys()), len(words))
                 start_session(word_keys)
                 st.rerun()
+            else:
+                st.warning("훈련을 시작하기 위한 단어가 부족합니다 (최소 4개 필요).")
 
 # --- 3. 테스트 화면 ---
 elif st.session_state.page == 'test':
     words = load_words(SHEET_URLS[st.session_state.selected_grade])
     word = st.session_state.test_words[st.session_state.current_q]
-    
+    ans = words[word]
+
+    # [핵심 수정] 보기(options) 고정 로직
+    # 현재 문제 번호가 바뀌었거나 보기가 저장되어 있지 않은 경우에만 새로 생성
+    if 'current_opts' not in st.session_state or st.session_state.get('last_q_idx') != st.session_state.current_q:
+        others = [v for k, v in words.items() if v != ans]
+        # 중복 제거 및 가용 가능한 오답 추출
+        others = list(set(others))
+        opts = random.sample(others, min(len(others), 3)) + [ans]
+        random.shuffle(opts)
+        st.session_state.current_opts = opts
+        st.session_state.last_q_idx = st.session_state.current_q
+
     if st.session_state.review_mode:
         st.markdown("<div style='text-align:center; color:#e63946; font-size:0.8rem; font-weight:bold; margin-bottom:10px;'>🔥 오답 정복 모드 진행 중 🔥</div>", unsafe_allow_html=True)
     
@@ -136,20 +155,20 @@ elif st.session_state.page == 'test':
     st.markdown(f"<div class='word-canvas'>{word}</div>", unsafe_allow_html=True)
 
     if st.session_state.get('feedback', False):
-        if st.session_state.is_correct: st.markdown("<p style='text-align:center; color:#1a1a1a; font-weight:600;'>🎯 정답입니다!</p>", unsafe_allow_html=True)
-        else: st.markdown(f"<p style='text-align:center; color:#e63946;'>⚠️ 오답! 정답은: <b>{st.session_state.ans}</b></p>", unsafe_allow_html=True)
+        if st.session_state.is_correct: 
+            st.markdown("<p style='text-align:center; color:#1a1a1a; font-weight:600;'>🎯 정답입니다!</p>", unsafe_allow_html=True)
+        else: 
+            st.markdown(f"<p style='text-align:center; color:#e63946;'>⚠️ 오답! 정답은: <b>{st.session_state.ans}</b></p>", unsafe_allow_html=True)
         
         if st.button("다음 문제 ➡️", use_container_width=True):
             st.session_state.feedback = False
             st.session_state.current_q += 1
-            if st.session_state.current_q >= len(st.session_state.test_words): st.session_state.page = 'result'
+            if st.session_state.current_q >= len(st.session_state.test_words): 
+                st.session_state.page = 'result'
             st.rerun()
     else:
-        ans = words[word]
-        others = [v for k, v in words.items() if v != ans]
-        opts = random.sample(others, min(len(others), 5)) + [ans]
-        random.shuffle(opts)
-        
+        # 고정된 보기를 사용하여 버튼 생성
+        opts = st.session_state.current_opts
         cols = st.columns(2)
         for i, opt in enumerate(opts):
             if cols[i%2].button(opt, key=f"btn_{i}", use_container_width=True):
@@ -160,18 +179,14 @@ elif st.session_state.page == 'test':
                     st.session_state.is_correct = True
                 else:
                     st.session_state.is_correct = False
-                    if word not in st.session_state.incorrect_list: st.session_state.incorrect_list.append(word)
+                    if word not in st.session_state.incorrect_list: 
+                        st.session_state.incorrect_list.append(word)
                 st.rerun()
 
-    # 오답 서랍 복구
+    # 실시간 오답 확인 (선택 사항)
     if st.session_state.incorrect_list:
         st.write("---")
         with st.expander(f"📝 현재까지 틀린 단어 ({len(st.session_state.incorrect_list)}개) 확인하기"):
-            if st.button("🔥 지금 바로 틀린 단어만 재시험 보기", use_container_width=True):
-                review_words = list(st.session_state.incorrect_list)
-                st.session_state.incorrect_list = []
-                start_session(review_words, is_review=True)
-                st.rerun()
             error_data = [{"단어": w, "뜻": words.get(w, "")} for w in st.session_state.incorrect_list]
             st.table(error_data)
 
@@ -195,7 +210,8 @@ elif st.session_state.page == 'result':
             st.session_state.incorrect_list = []
             start_session(review_words, is_review=True)
             st.rerun()
-    else: st.success("✨ 모든 어휘를 마스터했습니다!")
+    else: 
+        st.success("✨ 모든 어휘를 마스터했습니다!")
 
     if st.button("🔄 메인 메뉴로 돌아가기", use_container_width=True):
         st.session_state.page = 'main'
