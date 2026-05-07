@@ -52,6 +52,7 @@ st.markdown("""
         font-size: 1rem !important;
         min-height: 55px;
         transition: all 0.3s ease;
+        margin-bottom: 10px;
     }
 
     div.stButton > button:hover {
@@ -61,6 +62,11 @@ st.markdown("""
     
     .stExpander { border: 1px solid #eeeeee !important; border-radius: 0px !important; }
     hr { border-top: 1px solid #1a1a1a; }
+
+    /* 파도 애니메이션 (하단 장식) */
+    .ocean { 
+      height: 5%; width:100%; position:fixed; bottom:0; left:0; background: #01579b; opacity: 0.1;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,6 +75,7 @@ def load_words(url):
     try:
         df = pd.read_csv(url)
         df = df.dropna(how='all')
+        # 데이터 정리: 공백 제거 및 문자열 변환
         return dict(zip(df.iloc[:, 0].astype(str).str.strip(), df.iloc[:, 1].astype(str).str.strip()))
     except: return {}
 
@@ -89,9 +96,12 @@ def start_session(word_list, is_review=False):
     if not is_review:
         st.session_state.score = 0
         st.session_state.incorrect_list = []
+    # 문제 전환 시 선택지 초기화를 위해 삭제
+    if 'current_options' in st.session_state:
+        del st.session_state.current_options
     st.session_state.page = 'test'
 
-# --- 1. 보안 게이트 (문구 수정됨) ---
+# --- 1. 보안 게이트 ---
 if not st.session_state.authenticated:
     st.markdown("<div style='margin-top:100px;'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center; font-family:\"Noto Serif KR\";'>🔒 보람T 어휘 훈련소 입장</h2>", unsafe_allow_html=True)
@@ -116,19 +126,33 @@ if st.session_state.page == 'main':
         grade = st.selectbox("📚 학년을 선택하세요", ["1학년", "2학년", "3학년"])
         st.session_state.selected_grade = grade
         words = load_words(SHEET_URLS[grade])
-        st.markdown(f"<p style='text-align:center; color:#666; margin-top:15px;'>🍃 등록된 어휘: {len(words)}개</p>", unsafe_allow_html=True)
+        st.markdown(f<p style='text-align:center; color:#666; margin-top:15px;'>🍃 등록된 어휘: {len(words)}개</p>, unsafe_allow_html=True)
         
         if st.button("🚀 훈련 시작하기", use_container_width=True):
-            if len(words) >= 4:
-                word_keys = random.sample(list(words.keys()), len(words))
+            if len(words) >= 8:
+                word_keys = list(words.keys())
+                random.shuffle(word_keys)
                 start_session(word_keys)
                 st.rerun()
+            else:
+                st.warning("훈련을 시작하려면 최소 8개 이상의 단어가 등록되어 있어야 합니다.")
 
 # --- 3. 테스트 화면 ---
 elif st.session_state.page == 'test':
     words = load_words(SHEET_URLS[st.session_state.selected_grade])
     word = st.session_state.test_words[st.session_state.current_q]
     
+    # [핵심 수정] 선택지 고정 로직
+    if 'current_options' not in st.session_state:
+        ans = words[word]
+        others = [v for k, v in words.items() if v != ans]
+        # 8지선다: 오답 7개 + 정답 1개
+        num_others = min(len(others), 7)
+        opts = random.sample(others, num_others) + [ans]
+        random.shuffle(opts)
+        st.session_state.current_options = opts
+        st.session_state.ans = ans
+
     if st.session_state.review_mode:
         st.markdown("<div style='text-align:center; color:#e63946; font-size:0.8rem; font-weight:bold; margin-bottom:10px;'>🔥 오답 정복 모드 진행 중 🔥</div>", unsafe_allow_html=True)
     
@@ -136,25 +160,30 @@ elif st.session_state.page == 'test':
     st.markdown(f"<div class='word-canvas'>{word}</div>", unsafe_allow_html=True)
 
     if st.session_state.get('feedback', False):
-        if st.session_state.is_correct: st.markdown("<p style='text-align:center; color:#1a1a1a; font-weight:600;'>🎯 정답입니다!</p>", unsafe_allow_html=True)
-        else: st.markdown(f"<p style='text-align:center; color:#e63946;'>⚠️ 오답! 정답은: <b>{st.session_state.ans}</b></p>", unsafe_allow_html=True)
+        if st.session_state.is_correct: 
+            st.markdown("<p style='text-align:center; color:#1a1a1a; font-weight:600; font-size:1.2rem;'>🎯 정답입니다!</p>", unsafe_allow_html=True)
+        else: 
+            # 깜빡이는 효과 대용으로 붉은색 강조
+            st.markdown(f"<div style='background-color:#fff5f5; padding:20px; border-radius:10px; border:1px solid #feb2b2; text-align:center;'><p style='color:#e63946; font-size:1.2rem; margin:0;'>⚠️ 오답! 정답은: <b>{st.session_state.ans}</b></p></div>", unsafe_allow_html=True)
         
+        st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
         if st.button("다음 문제 ➡️", use_container_width=True):
             st.session_state.feedback = False
             st.session_state.current_q += 1
-            if st.session_state.current_q >= len(st.session_state.test_words): st.session_state.page = 'result'
+            if 'current_options' in st.session_state: del st.session_state.current_options
+            
+            if st.session_state.current_q >= len(st.session_state.test_words): 
+                st.session_state.page = 'result'
             st.rerun()
     else:
-        ans = words[word]
-        others = [v for k, v in words.items() if v != ans]
-        opts = random.sample(others, min(len(others), 5)) + [ans]
-        random.shuffle(opts)
+        opts = st.session_state.current_options
+        ans = st.session_state.ans
         
+        # 2열 8지선다 배치
         cols = st.columns(2)
         for i, opt in enumerate(opts):
             if cols[i%2].button(opt, key=f"btn_{i}", use_container_width=True):
                 st.session_state.feedback = True
-                st.session_state.ans = ans
                 if opt == ans:
                     if not st.session_state.review_mode: st.session_state.score += 1
                     st.session_state.is_correct = True
@@ -163,15 +192,10 @@ elif st.session_state.page == 'test':
                     if word not in st.session_state.incorrect_list: st.session_state.incorrect_list.append(word)
                 st.rerun()
 
-    # 오답 서랍 복구
+    # 하단 오답 서랍
     if st.session_state.incorrect_list:
         st.write("---")
         with st.expander(f"📝 현재까지 틀린 단어 ({len(st.session_state.incorrect_list)}개) 확인하기"):
-            if st.button("🔥 지금 바로 틀린 단어만 재시험 보기", use_container_width=True):
-                review_words = list(st.session_state.incorrect_list)
-                st.session_state.incorrect_list = []
-                start_session(review_words, is_review=True)
-                st.rerun()
             error_data = [{"단어": w, "뜻": words.get(w, "")} for w in st.session_state.incorrect_list]
             st.table(error_data)
 
@@ -180,13 +204,16 @@ elif st.session_state.page == 'result':
     st.markdown("<div style='margin-top:50px;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='studio-title'>🎊 테스트 완료 🎊</div>", unsafe_allow_html=True)
     
-    score_pct = int((st.session_state.score / len(st.session_state.test_words)) * 100) if not st.session_state.review_mode else 100
+    total_q = len(st.session_state.test_words)
+    score_pct = int((st.session_state.score / total_q) * 100) if not st.session_state.review_mode else 100
+    
     if not st.session_state.review_mode:
         st.markdown(f"<h3 style='text-align:center; font-family:\"Noto Serif KR\"; font-size:3rem;'>{score_pct}%</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center; color:#666;'>{total_q}문제 중 {st.session_state.score}문제 정답</p>", unsafe_allow_html=True)
     
     st.write("---")
     if st.session_state.incorrect_list:
-        st.subheader("📝 최종 오답 리스트")
+        st.subheader("📝 오답 리스트")
         words_dict = load_words(SHEET_URLS[st.session_state.selected_grade])
         error_data = [{"단어": w, "뜻": words_dict.get(w, "")} for w in st.session_state.incorrect_list]
         st.table(error_data)
@@ -201,3 +228,6 @@ elif st.session_state.page == 'result':
         st.session_state.page = 'main'
         st.session_state.review_mode = False
         st.rerun()
+
+# 하단 장식용 파도 배경
+st.markdown("<div class='ocean'></div>", unsafe_allow_html=True)
