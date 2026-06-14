@@ -101,12 +101,18 @@ elif st.session_state.page == 'test':
     word = st.session_state.test_words[st.session_state.current_q]
     ans = words[word]
 
-    # [수정] 보기 6개 생성 및 세션 고정
+    # [수정 적용] 동의어 출현 방지 및 세션 고정 로직
     if 'current_opts' not in st.session_state or st.session_state.get('last_q_idx') != st.session_state.current_q:
-        others = [v for k, v in words.items() if v != ans]
-        others = list(set(others)) # 중복 제거
-        opts = random.sample(others, min(len(others), 5)) + [ans] # 최대 오답 5개 + 정답 1개
+        clean_ans = ans.strip()
+        
+        # 단어 자체가 다르고, 앞뒤 공백을 제거한 '뜻'도 정답과 일치하지 않는 것만 오답 후보로 선정
+        others = [v.strip() for k, v in words.items() if k != word and v.strip() != clean_ans]
+        others = list(set(others)) # 오답들 내부에서도 뜻 중복 제거
+        
+        # 최대 오답 5개 + 정답 1개 조합 후 셔플
+        opts = random.sample(others, min(len(others), 5)) + [ans]
         random.shuffle(opts)
+        
         st.session_state.current_opts = opts
         st.session_state.last_q_idx = st.session_state.current_q
 
@@ -140,7 +146,7 @@ elif st.session_state.page == 'test':
                     if word not in st.session_state.incorrect_list: st.session_state.incorrect_list.append(word)
                 st.rerun()
 
-    # [수정] 하단 오답 서랍 및 재시험 버튼 복구
+    # 하단 오답 서랍 및 재시험 버튼
     if st.session_state.incorrect_list:
         st.write("---")
         with st.expander(f"📝 현재까지 틀린 단어 ({len(st.session_state.incorrect_list)}개) 확인하기"):
