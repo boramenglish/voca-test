@@ -30,6 +30,8 @@ EXAM_PASS = 40         # 합격 기준 (정답 수)
 EXAM_MAX_WRONG = 10    # 허용 오답 수 (11개째 틀리면 즉시 탈락)
 TIME_LIMIT = 4         # 화면에 보이는 제한시간(초)
 TIME_GRACE = 0.5       # 인터넷 지연 대비 숨은 여유시간(초) → 실제 판정 4.5초
+BREAK_AFTER = [17, 34] # 이 번호 문제를 푼 뒤 휴식 (빈 [ ]로 두면 휴식 없음)
+BREAK_SECONDS = 60     # 휴식 시간(초)
 PRACTICE_OPTS = 6      # 연습 보기 개수
 EXAM_OPTS = 8          # 시험 보기 개수
 
@@ -189,6 +191,14 @@ def exam_record(correct, word):
         else:
             ss.page = 'exam_fail'
             ss.show_fail_dialog = True
+    elif ss.exam_q in BREAK_AFTER:              # 17번, 34번 끝 → 휴식
+        ss.page = 'exam_break'
+        ss.break_start = time.time()
+
+
+def end_break():
+    ss.page = 'exam'
+    ss.exam_opts = None     # 다음 문제 타이머를 새로 시작
 
 
 # =====================================================================
@@ -239,6 +249,10 @@ if ss.page == 'main':
             else:
                 st.error(f"시험을 보려면 단어가 {EXAM_TOTAL}개 이상 필요합니다.")
 
+    break_rule = ""
+    if BREAK_AFTER:
+        nums = ", ".join(f"{n}번" for n in BREAK_AFTER)
+        break_rule = f"· {nums} 문제 후 {BREAK_SECONDS}초 휴식 (건너뛰기 가능)<br>"
     st.markdown(f"""
     <div class='rule-box'>
     <b>📝 실전 시험 규칙</b><br>
@@ -246,6 +260,7 @@ if ss.page == 'main':
     · 문제당 제한시간 {TIME_LIMIT}초 (시간 초과 = 오답)<br>
     · {EXAM_PASS}개 이상 맞히면 <b>합격</b><br>
     · 오답 {EXAM_MAX_WRONG + 1}개가 되는 순간 <b>즉시 탈락</b><br>
+    {break_rule}
     · 몇 번이든 다시 도전할 수 있습니다
     </div>
     """, unsafe_allow_html=True)
@@ -401,6 +416,41 @@ elif ss.page == 'exam':
                 st.rerun()
 
     exam_screen()
+
+
+# =====================================================================
+# 5-1. 시험 중 휴식 시간
+# =====================================================================
+elif ss.page == 'exam_break':
+
+    @st.fragment(run_every=1)
+    def break_screen():
+        if ss.page != 'exam_break':
+            return
+        elapsed = time.time() - ss.break_start
+        if elapsed >= BREAK_SECONDS:
+            end_break()
+            st.rerun()
+        remain = max(0, math.ceil(BREAK_SECONDS - elapsed))
+
+        st.markdown("<div style='margin-top:40px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='studio-title'>☕ 잠깐 쉬어가세요</div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 실전 시험 · {ss.exam_q}번까지 완료</p>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='exam-bar'>
+            <div class='exam-box'>진행<b>{ss.exam_q} / {len(ss.exam_words)}</b></div>
+            <div class='exam-box'>남은 휴식<b>{remain}초</b></div>
+            <div class='exam-box'>오답<b>{ss.exam_wrong} / {EXAM_MAX_WRONG}</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.progress(max(0.0, min(1.0, 1 - elapsed / BREAK_SECONDS)))
+        st.markdown(f"<div class='word-canvas-exam' style='font-size:2rem;'>{remain}</div>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; color:#888; font-size:0.85rem;'>휴식이 끝나면 다음 문제가 자동으로 시작됩니다.</p>", unsafe_allow_html=True)
+        if st.button("⏭️ 휴식 건너뛰고 바로 시작", use_container_width=True, key=f"skip_{ss.exam_q}"):
+            end_break()
+            st.rerun()
+
+    break_screen()
 
 
 # =====================================================================
