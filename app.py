@@ -28,7 +28,7 @@ SHEET_URLS = {
 EXAM_TOTAL = 40        # 출제 문항 수
 EXAM_PASS = 32         # 합격 기준 (정답 수)
 EXAM_MAX_WRONG = 8     # 허용 오답 수 (9개째 틀리면 즉시 탈락)
-TIME_LIMIT = 4         # 화면에 보이는 제한시간(초)
+TIME_LIMIT = 6         # 화면에 보이는 제한시간(초)
 TIME_GRACE = 0.5       # 인터넷 지연 대비 숨은 여유시간(초) → 실제 판정 4.5초
 BREAK_AFTER = [20] # 이 번호 문제를 푼 뒤 휴식 (빈 [ ]로 두면 휴식 없음)
 BREAK_SECONDS = 60     # 휴식 시간(초)
@@ -155,7 +155,7 @@ def start_session(word_list, is_review=False):
 
 
 def start_exam(grade, words):
-    """실전 시험 시작"""
+    """출구 시험 시작"""
     ss.exam_grade = grade
     ss.exam_words = random.sample(list(words.keys()), EXAM_TOTAL)
     ss.exam_q = 0
@@ -242,7 +242,7 @@ if ss.page == 'main':
             else:
                 st.error("단어를 불러오지 못했습니다. 잠시 후 다시 시도하세요.")
 
-        if st.button("📝 실전 시험 보기", use_container_width=True):
+        if st.button("📝 출구 시험 보기", use_container_width=True):
             if len(words) >= EXAM_TOTAL and len(set(words.values())) >= EXAM_OPTS:
                 start_exam(grade, words)
                 st.rerun()
@@ -255,7 +255,7 @@ if ss.page == 'main':
         break_rule = f"· {nums} 문제 후 {BREAK_SECONDS}초 휴식 (건너뛰기 가능)<br>"
     st.markdown(f"""
     <div class='rule-box'>
-    <b>📝 실전 시험 규칙</b><br>
+    <b>📝 출구 시험 규칙</b><br>
     · 단어 {EXAM_TOTAL}개 랜덤 출제, 보기 {EXAM_OPTS}개<br>
     · 문제당 제한시간 {TIME_LIMIT}초 (시간 초과 = 오답)<br>
     · {EXAM_PASS}개 이상 맞히면 <b>합격</b><br>
@@ -368,7 +368,7 @@ elif ss.page == 'result':
 
 
 # =====================================================================
-# 5. 실전 시험 화면 (0.5초마다 타이머 갱신)
+# 5. 출구 시험 화면 (0.5초마다 타이머 갱신)
 # =====================================================================
 elif ss.page == 'exam':
 
@@ -398,7 +398,7 @@ elif ss.page == 'exam':
         wrong_cls = "exam-box danger" if ss.exam_wrong >= EXAM_MAX_WRONG - 2 else "exam-box"
         time_cls = "exam-box danger" if remain <= 1 else "exam-box"
 
-        st.markdown(f"<p style='text-align:center; color:#e63946; font-size:0.8rem; font-weight:bold; margin-bottom:6px;'>📝 {ss.exam_grade} 실전 시험</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center; color:#e63946; font-size:0.8rem; font-weight:bold; margin-bottom:6px;'>📝 {ss.exam_grade} 출구 시험</p>", unsafe_allow_html=True)
         st.markdown(f"""
         <div class='exam-bar'>
             <div class='exam-box'>진행<b>{q + 1} / {len(ss.exam_words)}</b></div>
@@ -435,7 +435,7 @@ elif ss.page == 'exam_break':
 
         st.markdown("<div style='margin-top:40px;'></div>", unsafe_allow_html=True)
         st.markdown("<div class='studio-title'>☕ 잠깐 쉬어가세요</div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 실전 시험 · {ss.exam_q}번까지 완료</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 출구 시험 · {ss.exam_q}번까지 완료</p>", unsafe_allow_html=True)
         st.markdown(f"""
         <div class='exam-bar'>
             <div class='exam-box'>진행<b>{ss.exam_q} / {len(ss.exam_words)}</b></div>
@@ -471,7 +471,7 @@ elif ss.page == 'exam_fail':
 
     st.markdown("<div style='margin-top:50px;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='studio-title'>❌ 탈락</div>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 실전 시험 · 맞힌 개수 {ss.exam_correct}개 · 오답 {ss.exam_wrong}개</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 출구 시험 · 맞힌 개수 {ss.exam_correct}개 · 오답 {ss.exam_wrong}개</p>", unsafe_allow_html=True)
     st.write("---")
 
     if ss.exam_wrong_list:
@@ -505,7 +505,7 @@ elif ss.page == 'exam_pass':
     st.markdown("<div style='margin-top:50px;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='studio-title'>🎉 합격을 축하합니다! 🎉</div>", unsafe_allow_html=True)
     st.markdown(f"<h3 style='text-align:center; font-family:\"Noto Serif KR\"; font-size:2.5rem;'>{ss.exam_correct} / {EXAM_TOTAL}</h3>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 실전 시험 · 합격 시각 {ss.exam_pass_time}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:#666;'>{ss.exam_grade} 출구 시험 · 합격 시각 {ss.exam_pass_time}</p>", unsafe_allow_html=True)
     st.write("---")
 
     if not ss.exam_saved:
