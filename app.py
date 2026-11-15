@@ -25,15 +25,15 @@ SHEET_URLS = {
 }
 
 # 시험 규칙
-EXAM_TOTAL = 50        # 출제 문항 수
-EXAM_PASS = 40         # 합격 기준 (정답 수)
-EXAM_MAX_WRONG = 10    # 허용 오답 수 (11개째 틀리면 즉시 탈락)
-TIME_LIMIT = 6         # 화면에 보이는 제한시간(초)
+EXAM_TOTAL = 40        # 출제 문항 수
+EXAM_PASS = 32         # 합격 기준 (정답 수)
+EXAM_MAX_WRONG = 8     # 허용 오답 수 (9개째 틀리면 즉시 탈락)
+TIME_LIMIT = 4         # 화면에 보이는 제한시간(초)
 TIME_GRACE = 0.5       # 인터넷 지연 대비 숨은 여유시간(초) → 실제 판정 4.5초
-BREAK_AFTER = [17, 34] # 이 번호 문제를 푼 뒤 휴식 (빈 [ ]로 두면 휴식 없음)
+BREAK_AFTER = [20] # 이 번호 문제를 푼 뒤 휴식 (빈 [ ]로 두면 휴식 없음)
 BREAK_SECONDS = 60     # 휴식 시간(초)
 PRACTICE_OPTS = 6      # 연습 보기 개수
-EXAM_OPTS = 8          # 시험 보기 개수
+EXAM_OPTS = 6          # 시험 보기 개수
 
 KST = timezone(timedelta(hours=9))
 
@@ -191,7 +191,7 @@ def exam_record(correct, word):
         else:
             ss.page = 'exam_fail'
             ss.show_fail_dialog = True
-    elif ss.exam_q in BREAK_AFTER:              # 17번, 34번 끝 → 휴식
+    elif ss.exam_q in BREAK_AFTER:              # 지정 번호 끝 → 휴식
         ss.page = 'exam_break'
         ss.break_start = time.time()
 
