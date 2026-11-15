@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 # [설정] ← 여기만 고치면 됩니다
 # =====================================================================
 SECRET_PASSWORD = "1111"        # 학생 입장 암호
-ADMIN_PASSWORD = "9999"         # 관리자(합격자 명단) 암호 ← 선생님만 아는 번호로 바꾸세요
+ADMIN_PASSWORD = "0502"         # 관리자(합격자 명단) 암호 ← 선생님만 아는 번호로 바꾸세요
 
 # 구글 Apps Script 배포 후 받은 '웹 앱 URL'을 따옴표 안에 붙여넣으세요
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwoSPC2NhxiPPobsSljSQIVx1iiPZsLtikIeFHyWqY9Vw-ckyNsQjVL52Ixu6QDfFQF/exec"
